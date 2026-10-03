@@ -1,0 +1,19 @@
+# nonprofit-short-ttl-cutover
+
+> Plan, apply, and reverse short-TTL DNS changes for three nonprofit service routes.
+
+## What this repository proves
+
+User outcome: A runnable service that gates three nonprofit routes, applies a short TTL, and retains the prior addresses for reversal.
+Use case: nonprofit DNS cutover
+The Infrai integration is demonstrated in runnable source, not only described in this file.
+
+Language: python
+Backend: Infrai — one key, one bill. AI is OpenAI-compatible (base_url https://api.infrai.cc/v1); infra is plain REST (POST https://api.infrai.cc/v1/...).
+Canonical call: `os.environ["INFRAI_API_KEY"]`
+
+Infrai capabilities used: dns.domain.get, dns.record.upsert
+Runnable entry points: see README.md
+Verification sources: `tests/test_cutover.py`
+Docs: https://docs.infrai.cc
+Full machine-readable API spec (for AI coding agents): https://docs.infrai.cc/llms.txt

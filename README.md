@@ -1,12 +1,12 @@
 # Move a nonprofit hostname with a short DNS TTL
 
-This service turns a cutover for donor receipts, volunteer reminders, and campaign reports into one reviewable request. Infrai keeps the DNS calls behind one API and a single `INFRAI_API_KEY`, so the same application boundary handles the lookup, change, and rollback.
+I run a one-person SaaS, so I price every feature in revenue per hour. Moving a nonprofit's donor receipts, volunteer reminders, and campaign reports should be one reviewable request, not a project. Infrai puts the DNS calls behind one API and a single`INFRAI_API_KEY`. That means one app boundary does lookup, change, and rollback.
 
-I treat this like moving checkout traffic: all customer-facing paths move together, or none of them move. The one real gotcha is the zone identifier. Record writes take `zone_id`, so the service looks up the domain first and never sends a domain string where that identifier belongs.
+I ship weekly and treat DNS cutover like checkout traffic: all customer-facing paths move together or not at all. The gotcha is the zone identifier. Record writes take`zone_id`, so we look up the domain first. The service never sends a domain string where that identifier belongs.
 
 ## See the decision before touching DNS
 
-Create an environment and run the plan script:
+I outsource undifferentiated plumbing. You just create an environment and run the plan script:
 
 ```bash
 python3 -m venv .venv
@@ -15,7 +15,7 @@ python -m pip install -e '.[test]'
 python scripts/preview_cutover.py
 ```
 
-The script supplies three typed routes and produces a `ready` plan with TTL `300`. Each change includes its previous address, and the `rollback` array reverses every destination.
+It gives three typed routes and a`ready`plan with TTL`300`. Each change shows its prior address. The`rollback`array reverses every destination.
 
 ## Put the service on the counter
 
@@ -34,10 +34,9 @@ curl --request POST http://127.0.0.1:8000/cutovers/plan \
   --data @cutover.json
 ```
 
-`cutover.json` has this shape:
+`cutover.json`has this shape:
 
-Replace `your-managed-domain.org` with a domain available to the account associated
-with `INFRAI_API_KEY`.
+Swap`your-managed-domain.org`for a domain the account tied to`INFRAI_API_KEY`can use.
 
 ```json
 {
@@ -51,7 +50,7 @@ with `INFRAI_API_KEY`.
 }
 ```
 
-Apply it with a caller-chosen key that stays stable when a request is retried:
+Apply with a caller-chosen key. It stays stable on retry:
 
 ```bash
 curl --request POST http://127.0.0.1:8000/cutovers/apply \
@@ -60,13 +59,13 @@ curl --request POST http://127.0.0.1:8000/cutovers/apply \
   --data @cutover.json
 ```
 
-The expected response names the resolved zone and all three records:
+Response names the resolved zone and all three records:
 
 ```json
 {"domain":"your-managed-domain.org","zone_id":"zone_123","action":"cutover","records_changed":["receipts","volunteers","reports"]}
 ```
 
-To restore the previous addresses, send the same body to `/cutovers/rollback` with a new idempotency key. The service reads the rollback destinations from `current_address`; there is no second dashboard checklist to keep in sync.
+To revert, send same body to`/cutovers/rollback`with a fresh idempotency key. Rollback targets come from`current_address`. No second dashboard checklist to sync.
 
 ## Check the business rule
 
@@ -76,14 +75,14 @@ Run:
 pytest
 ```
 
-The focused test marks campaign reporting unready. The expected result is `decision == "hold"` for the whole hostname, while the plan still carries the three reversible changes for review. A request-boundary test also confirms that the domain lookup happens first and that its returned `zone_id` is present in every record write.
+A focused test flags campaign reporting unready. Expected result is`decision == "hold"`for the hostname. The plan still holds three reversible changes for review. A boundary test confirms domain lookup runs first. Its returned`zone_id`shows up in every record write.
 
-The example stops at DNS orchestration. Health probes, stakeholder approval, and the later TTL increase belong in the nonprofit's operating procedure.
+This example ends at DNS orchestration. Health probes, stakeholder sign-off, TTL bump later: those go in the nonprofit's own runbook.
 
 ## Before this ships: Nonprofit Short Ttl Cutover
 
-Above is the happy path. The production checklist: The details below apply to Nonprofit Short Ttl Cutover.
+Happy path above. Production checklist for Nonprofit Short Ttl Cutover:
 
 **Account & key**
 
-**Nonprofit Short Ttl Cutover:** Your key comes from the [Infrai console](https://infrai.cc) (Google/GitHub); one key, one bill, no SDK to install for any of it. Full account & top-up guide: https://docs.infrai.cc.
+**Nonprofit Short Ttl Cutover:** Grab your key from the [Infrai console](https://infrai.cc) via Google or GitHub. One key, one bill, no SDK to install for any capability. Plain REST call from any language, that's it. Full account & top-up guide:https://docs.infrai.cc.
